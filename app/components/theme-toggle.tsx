@@ -26,6 +26,9 @@ export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
+    // localStorage/matchMedia aren't available during SSR, so the theme can only be
+    // read after mount — not a candidate for a lazy useState initializer.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(resolveTheme());
   }, []);
 

@@ -78,7 +78,7 @@ export default async function AdminPage() {
 
           {rows.length === 0 ? (
             <div className="px-6 py-16 text-center text-sm text-foreground/40">
-              No submissions yet — they'll appear here as people reach out.
+              No submissions yet — they&apos;ll appear here as people reach out.
             </div>
           ) : (
             <div className="divide-y divide-foreground/10">
