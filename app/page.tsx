@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { PrimaryLink, SecondaryLink } from "./components/button";
 
 export const metadata: Metadata = {
-  title: "AI Support Desk",
+  title: { absolute: "AI Support Desk" },
   description:
     "Diagnose, troubleshoot, and escalate issues faster with AI-powered support.",
 };

@@ -15,7 +15,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL
+  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL),
   title: {
     default: "AI Support Desk",
     template: "%s | AI Support Desk",

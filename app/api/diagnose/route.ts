@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
+import { diagnoseRatelimit } from "@/lib/rate-limit";
 
 const client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY });
 
@@ -10,16 +11,29 @@ const SYSTEM_PROMPT =
   "3. **Fix** — concrete steps to resolve it\n\n" +
   "Be specific, concise, and actionable. Use plain text with the section headers above.";
 
+const MAX_ISSUE_LENGTH = 2000;
+const MAX_LOG_LENGTH = 5000;
+
 export async function POST(req: NextRequest) {
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const { success } = await diagnoseRatelimit.limit(ip);
+  if (!success) {
+    return new Response("Too many requests. Please try again later.", {
+      status: 429,
+    });
+  }
+
   const body = await req.json() as { issue?: string; errorLog?: string };
-  const issue = body.issue?.trim();
+  const issue = body.issue?.trim().slice(0, MAX_ISSUE_LENGTH);
 
   if (!issue) {
     return new Response("Issue description is required", { status: 400 });
   }
 
-  const userMessage = body.errorLog?.trim()
-    ? `${issue}\n\nError log / stack trace:\n\`\`\`\n${body.errorLog.trim()}\n\`\`\``
+  const errorLog = body.errorLog?.trim().slice(0, MAX_LOG_LENGTH);
+  const userMessage = errorLog
+    ? `${issue}\n\nError log / stack trace:\n\`\`\`\n${errorLog}\n\`\`\``
     : issue;
 
   const encoder = new TextEncoder();

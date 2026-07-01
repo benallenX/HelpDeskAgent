@@ -6,7 +6,10 @@ import { PrimaryButton } from "../components/button";
 const INPUT_CLASS =
   "w-full rounded-lg border border-foreground/20 bg-background px-4 py-2.5 text-sm placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 resize-y";
 
-type Status = "idle" | "streaming" | "done" | "error";
+const MAX_ISSUE = 2000;
+const MAX_LOG = 5000;
+
+type Status = "idle" | "streaming" | "done" | "error" | "rate-limited";
 
 export default function DiagnoseForm() {
   const [issue, setIssue] = useState("");
@@ -27,6 +30,11 @@ export default function DiagnoseForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ issue, errorLog }),
       });
+
+      if (res.status === 429) {
+        setStatus("rate-limited");
+        return;
+      }
 
       if (!res.ok || !res.body) {
         throw new Error(`${res.status}`);
@@ -65,12 +73,18 @@ export default function DiagnoseForm() {
             id="issue"
             rows={4}
             required
+            maxLength={MAX_ISSUE}
             value={issue}
             onChange={(e) => setIssue(e.target.value)}
             className={INPUT_CLASS}
             placeholder="e.g. My app crashes on startup after updating the database driver…"
             aria-required="true"
           />
+          {issue.length > MAX_ISSUE * 0.9 && (
+            <p className="text-xs text-foreground/40 text-right">
+              {issue.length}/{MAX_ISSUE}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -81,6 +95,7 @@ export default function DiagnoseForm() {
           <textarea
             id="error-log"
             rows={5}
+            maxLength={MAX_LOG}
             value={errorLog}
             onChange={(e) => setErrorLog(e.target.value)}
             className={INPUT_CLASS}
@@ -105,7 +120,11 @@ export default function DiagnoseForm() {
           aria-label="Diagnosis output"
           className="rounded-2xl border border-foreground/10 p-8 sm:p-10"
         >
-          {status === "error" ? (
+          {status === "rate-limited" ? (
+            <p className="text-sm text-foreground/70">
+              You&apos;ve reached the limit (10 diagnoses per hour). Please try again later.
+            </p>
+          ) : status === "error" ? (
             <p className="text-sm text-red-600 dark:text-red-400">
               Something went wrong — please try again.
             </p>
@@ -117,9 +136,7 @@ export default function DiagnoseForm() {
               >
                 Diagnosis
               </p>
-              <pre
-                className="text-sm text-foreground/85 leading-relaxed whitespace-pre-wrap font-sans"
-              >
+              <pre className="text-sm text-foreground/85 leading-relaxed whitespace-pre-wrap font-sans">
                 {output}
                 {status === "streaming" && (
                   <span

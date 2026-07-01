@@ -49,7 +49,7 @@ export default function Header() {
             </SignInButton>
           </Show>
           <Show when="signed-in">
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </Show>
           <ThemeToggle />
         </div>

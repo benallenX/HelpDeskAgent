@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import DiagnoseForm from "./diagnose-form";
 
 export const metadata: Metadata = {
-  title: "Diagnose — AI Support Desk",
+  title: "Diagnose",
   description:
     "Describe your issue and get an AI-powered diagnosis with root cause analysis and step-by-step fixes.",
 };

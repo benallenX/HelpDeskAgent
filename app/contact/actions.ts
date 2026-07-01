@@ -14,6 +14,14 @@ export type ContactFormState =
 const resend = new Resend(process.env.RESEND_API_KEY);
 const TO = process.env.CONTACT_TO_EMAIL!;
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export async function submitContact(
   _prevState: ContactFormState,
   formData: FormData
@@ -49,10 +57,10 @@ export async function submitContact(
     replyTo: email,
     subject: `New message from ${name}`,
     html: `
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+      <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+      <p><strong>Email:</strong> <a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></p>
       <p><strong>Message:</strong></p>
-      <p style="white-space:pre-wrap">${message}</p>
+      <p style="white-space:pre-wrap">${escapeHtml(message)}</p>
     `,
   });
 
