@@ -8,7 +8,7 @@ This isn't a demo shell: the contact form actually sends email and persists to a
 
 - **AI Diagnosis** (`/diagnose`) — streams a structured root-cause analysis from Claude Opus via the Anthropic SDK, rate-limited to 10 requests/hour per IP
 - **Contact Form** (`/contact`) — validated server action, honeypot spam guard, 3 submissions/hour per IP, delivers email via Resend and persists to Supabase
-- **Admin Dashboard** (`/admin`) — Clerk-gated, further restricted to a single hardcoded admin email; shows submission stats and a table of contact entries
+- **Admin Dashboard** (`/admin`) — Clerk-gated, further restricted to the email in `ADMIN_EMAIL`; shows submission stats and a table of contact entries
 - **Dark / light mode** — system-aware theme, no flash on load
 - **Security headers** — `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` set globally in `next.config.ts`
 - **Custom 404** and an edge-rendered Open Graph image
@@ -33,7 +33,7 @@ This isn't a demo shell: the contact form actually sends email and persists to a
 - **Validation is pure and shared.** `lib/validate-contact.ts` has no framework dependencies, which is what makes it directly unit-testable (`tests/contact-validation.test.ts`) instead of needing a rendered form or a mocked server action.
 - **Rate limiting is centralized** in `lib/rate-limit.ts` — one Upstash Redis client, two `Ratelimit` instances (`contact`: 3/hr, `diagnose`: 10/hr) keyed by IP, so both write paths share the same Redis connection instead of each route rolling its own.
 - **`/api/diagnose` streams the response** back to the client as `text/plain` with `X-Accel-Buffering: no`, piping tokens from the Anthropic stream straight into a `ReadableStream` rather than buffering the full completion.
-- **Admin auth is two-layered:** `proxy.ts` (Clerk middleware) blocks unauthenticated requests to `/admin(.*)`, and `app/admin/page.tsx` additionally checks the signed-in user's email against a single hardcoded address. If you fork this, that email check is the first thing you'll want to replace with a real roles table.
+- **Admin auth is two-layered:** `proxy.ts` (Clerk middleware) blocks unauthenticated requests to `/admin(.*)`, and `app/admin/page.tsx` additionally checks the signed-in user's email against the `ADMIN_EMAIL` env var, failing closed (redirecting) if that var isn't set. It's still a single email rather than a roles table, which is fine for one admin but the first thing to replace if you add a second.
 - **`app/opengraph-image.tsx`** generates the OG image at request time on the edge runtime rather than shipping a static asset.
 
 ## Local Setup
@@ -72,6 +72,9 @@ SUPABASE_ANON_KEY=eyJ...
 RESEND_API_KEY=re_...
 CONTACT_TO_EMAIL=you@example.com
 
+# Admin dashboard access — must match the email on your Clerk account
+ADMIN_EMAIL=you@example.com
+
 # Upstash Redis
 UPSTASH_REDIS_REST_URL=https://your-db.upstash.io
 UPSTASH_REDIS_REST_TOKEN=...
@@ -100,7 +103,7 @@ The app uses the anon key with no RLS policy assumptions baked in — if you ena
 
 ### 4. Admin access
 
-`app/admin/page.tsx` hardcodes a single allowed admin email. Update `ADMIN_EMAIL` in that file to your own address before relying on the dashboard.
+Set `ADMIN_EMAIL` in `.env.local` to the email on your Clerk account. `/admin` redirects to `/` for anyone else, and also redirects everyone if the var is unset.
 
 ### 5. Run
 
@@ -137,9 +140,12 @@ app/
   components/              # Header, footer, button, theme toggle
   not-found.tsx             # Custom 404
   opengraph-image.tsx       # Edge-rendered OG image
+  robots.ts                 # robots.txt — disallows /admin and /api/
+  sitemap.ts                # sitemap.xml — /, /features, /contact, /diagnose
 lib/
   supabase.ts              # Supabase client (server-only)
   rate-limit.ts            # Upstash Ratelimit instances (contact, diagnose)
+  site-url.ts              # Shared base-URL resolution (env var → VERCEL_URL → localhost)
   validate-contact.ts       # Pure, framework-free validation — the tested surface
 tests/
   contact-validation.test.ts
@@ -150,9 +156,7 @@ next.config.ts               # Security headers
 
 ## Known limitations
 
-- Admin authorization is a single hardcoded email, not a roles table — fine for a solo project, not for a team.
-- No CI pipeline wired up yet (no GitHub Actions running lint/typecheck/tests on PRs).
-- No `robots.txt` / `sitemap.xml` — add before a public launch if SEO matters.
+- Admin authorization is a single email (`ADMIN_EMAIL`), not a roles table — fine for a solo project, not for a team.
 - No application monitoring or error tracking beyond `console.error` in the contact action.
 
 ## License

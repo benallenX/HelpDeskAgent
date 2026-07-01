@@ -5,8 +5,6 @@ import { supabase, type ContactSubmission } from "@/lib/supabase";
 
 export const metadata: Metadata = { title: "Admin" };
 
-const ADMIN_EMAIL = "admin@example.com";
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString("en-US", {
     month: "short",
@@ -23,7 +21,7 @@ export default async function AdminPage() {
 
   const user = await currentUser();
   const email = user?.emailAddresses[0]?.emailAddress;
-  if (email !== ADMIN_EMAIL) redirect("/");
+  if (!process.env.ADMIN_EMAIL || email !== process.env.ADMIN_EMAIL) redirect("/");
 
   const { data: submissions } = await supabase
     .from("contact_submissions")
