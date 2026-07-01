@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    # Placeholder values only — never real secrets. Several modules (lib/rate-limit.ts,
+    # lib/supabase.ts, proxy.ts) read these at import time, so `next build` needs them
+    # present and correctly formatted even though nothing is actually called in CI.
+    env:
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2ktcGxhY2Vob2xkZXItZG9tYWluLmNvbSQ
+      CLERK_SECRET_KEY: sk_test_0000000000000000000000000000000000000000
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_ANON_KEY: placeholder-anon-key
+      RESEND_API_KEY: re_placeholder
+      CONTACT_TO_EMAIL: ci@example.com
+      UPSTASH_REDIS_REST_URL: https://placeholder.upstash.io
+      UPSTASH_REDIS_REST_TOKEN: placeholder-token
+      CLAUDE_API_KEY: sk-ant-placeholder
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      - run: npm run build
