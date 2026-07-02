@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SignInButton, UserButton, Show } from "@clerk/nextjs";
+import { AuthControls } from "./auth-controls";
 import { ThemeToggle } from "./theme-toggle";
 
 export default function Header() {
@@ -41,16 +41,7 @@ export default function Header() {
               </li>
             </ul>
           </nav>
-          <Show when="signed-out">
-            <SignInButton mode="modal">
-              <button className="text-sm text-foreground/70 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 rounded">
-                Sign in
-              </button>
-            </SignInButton>
-          </Show>
-          <Show when="signed-in">
-            <UserButton />
-          </Show>
+          <AuthControls />
           <ThemeToggle />
         </div>
       </div>
