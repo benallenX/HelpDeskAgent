@@ -157,6 +157,7 @@ next.config.ts               # Security headers
 ## Known limitations
 
 - Admin authorization is a single email (`ADMIN_EMAIL`), not a roles table — fine for a solo project, not for a team.
+- `/admin` only works when running locally (`npm run dev`/`npm start`), not on the deployed Vercel app. Clerk's development-instance keys break `auth.protect()` off `localhost`, and getting production keys requires a custom domain we don't have yet (see `proxy.ts`).
 - No application monitoring or error tracking beyond `console.error` in the contact action.
 
 ## License
