@@ -11,11 +11,35 @@ const MAX_LOG = 5000;
 
 type Status = "idle" | "streaming" | "done" | "error" | "rate-limited";
 
+const PRESET_ISSUES = [
+  {
+    label: "App crashes on startup",
+    issue:
+      "My Next.js app crashes immediately on startup after I upgraded a dependency.",
+    errorLog:
+      "TypeError: Cannot read properties of undefined (reading 'default')\n    at Object.<anonymous> (/app/node_modules/some-pkg/index.js:12:9)\n    at Module._compile (node:internal/modules/cjs/loader:1256:14)",
+  },
+  {
+    label: "Database connection timeout",
+    issue:
+      "API requests time out connecting to the database in production, but everything works fine locally.",
+    errorLog:
+      "Error: connect ETIMEDOUT 10.0.0.5:5432\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1595:16)",
+  },
+  {
+    label: "Blank screen after login",
+    issue:
+      "Users see a blank white screen right after logging in successfully. No errors show up in the browser console.",
+    errorLog: "",
+  },
+];
+
 export default function DiagnoseForm() {
   const [issue, setIssue] = useState("");
   const [errorLog, setErrorLog] = useState("");
   const [output, setOutput] = useState("");
   const [status, setStatus] = useState<Status>("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,7 +61,11 @@ export default function DiagnoseForm() {
       }
 
       if (!res.ok || !res.body) {
-        throw new Error(`${res.status}`);
+        setErrorMessage(
+          "The diagnosis service hit an error on its end. Please try again in a moment."
+        );
+        setStatus("error");
+        return;
       }
 
       const reader = res.body.getReader();
@@ -51,6 +79,9 @@ export default function DiagnoseForm() {
 
       setStatus("done");
     } catch {
+      setErrorMessage(
+        "Couldn't reach the server. Check your connection and try again."
+      );
       setStatus("error");
     }
   }
@@ -62,6 +93,27 @@ export default function DiagnoseForm() {
         className="rounded-2xl border border-foreground/10 p-8 sm:p-10 flex flex-col gap-6"
         aria-label="Issue diagnosis form"
       >
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-medium text-foreground/50">
+            Try an example
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {PRESET_ISSUES.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => {
+                  setIssue(preset.issue);
+                  setErrorLog(preset.errorLog);
+                }}
+                className="text-xs rounded-full border border-foreground/15 px-3 py-1.5 text-foreground/70 hover:text-foreground hover:border-foreground/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex flex-col gap-1.5">
           <label htmlFor="issue" className="text-sm font-medium">
             Describe the issue{" "}
@@ -125,8 +177,14 @@ export default function DiagnoseForm() {
               You&apos;ve reached the limit (10 diagnoses per hour). Please try again later.
             </p>
           ) : status === "error" ? (
-            <p className="text-sm text-red-600 dark:text-red-400">
-              Something went wrong — please try again.
+            <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
+          ) : status === "streaming" && !output ? (
+            <p className="text-sm text-foreground/50 flex items-center gap-2">
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full bg-foreground/50 animate-pulse"
+                aria-hidden="true"
+              />
+              Thinking through your issue — this can take up to 20 seconds…
             </p>
           ) : (
             <div className="flex flex-col gap-2">

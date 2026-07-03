@@ -1,19 +1,20 @@
 import Link from "next/link";
 import { AuthControls } from "./auth-controls";
 import { ThemeToggle } from "./theme-toggle";
+import { MobileNav } from "./mobile-nav";
 
 export default function Header() {
   return (
     <header className="border-b border-foreground/10 px-6 py-4">
-      <div className="mx-auto max-w-6xl flex items-center justify-between">
+      <div className="mx-auto max-w-6xl flex items-center justify-between gap-4">
         <Link
           href="/"
-          className="text-lg font-semibold tracking-tight rounded hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
+          className="shrink-0 text-lg font-semibold tracking-tight rounded hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2"
         >
           AI Support Desk
         </Link>
-        <div className="flex items-center gap-6">
-          <nav aria-label="Main navigation">
+        <div className="flex items-center gap-3 sm:gap-6">
+          <nav aria-label="Main navigation" className="hidden sm:block">
             <ul className="flex gap-6" role="list">
               <li>
                 <Link
@@ -43,6 +44,7 @@ export default function Header() {
           </nav>
           <AuthControls />
           <ThemeToggle />
+          <MobileNav />
         </div>
       </div>
     </header>
