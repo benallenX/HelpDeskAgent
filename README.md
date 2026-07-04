@@ -1,8 +1,22 @@
 # AI Support Desk
 
-An AI-powered technical support platform built on Next.js 16 (App Router). A visitor describes an issue and gets back a streamed, structured diagnosis — root cause, verification steps, and a fix — from Claude Opus. There's also a real contact form and a small admin dashboard for reviewing submissions.
+## The problem
 
-This isn't a demo shell: the contact form actually sends email and persists to a database, both write paths are rate-limited, and there's a real (if small) test suite around the validation logic.
+Whenever something breaks — an app crashes, a database call times out, a deploy fails — figuring out *why* usually takes longer than actually fixing it. Most people either dig through logs alone or file a support ticket and wait for someone to get to it. I wanted a middle path: describe the problem in plain language and get back a structured, expert-level diagnosis immediately, with a real path to a human for anything that needs one.
+
+## How I solved it
+
+I built AI Support Desk: a Next.js app where a visitor describes an issue — optionally pasting an error log or stack trace — and streams back a structured root-cause analysis from Claude Opus. Not a wall of generic troubleshooting tips: a root cause, how to verify it, and concrete steps to fix it. For anything Claude can't resolve, there's a real contact form (rate-limited, spam-guarded, delivers email and persists to a database) and a small admin dashboard so submissions can actually be reviewed.
+
+I didn't stop at making the happy path work. Building this end-to-end meant:
+
+- **Catching a real caching bug.** An auth check buried in the shared header was calling a server-side API on every render, which silently forced *every page in the app* — including the marketing homepage — into fully dynamic, uncacheable rendering. Fixed by moving that check to the client; verified the fix by reading the actual `next build` route table before and after.
+- **Testing on mobile for real, not just resizing a browser window.** Screenshot testing at 375px caught a header that visually broke below the desktop breakpoint. Replaced it with a proper hamburger menu and re-verified with screenshots.
+- **Setting up CI.** Lint, typecheck, tests, and build all run on every push, so regressions get caught before they ship, not after.
+- **Scrubbing a leaked personal email from git history** — including rewriting every commit's author metadata — without breaking the ability to clone the repo, verified against a genuinely fresh clone afterward.
+- **Deploying to Vercel and dealing with a real auth limitation** (Clerk's development keys don't work correctly off `localhost`) instead of shipping something that looked fine locally and quietly broke in production.
+
+None of this is decorative. The rate limits are real Redis-backed sliding windows, the admin auth fails closed if misconfigured rather than silently allowing access, and the test suite actually runs in CI on every push.
 
 ## Screenshots
 
